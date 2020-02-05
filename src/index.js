@@ -22,10 +22,10 @@ async function main() {
         process.exit(1);
     }
 
-    const requestQueue = await Apify.openRequestQueue('posts');
+    const requestQueue = await Apify.openRequestQueue();
 
     const requestList = await Apify.openRequestList('request-list', [{
-        url: 'https://www.instagram.com/'+instagramUsername,
+        url: 'https://www.instagram.com/'+instagramUsername+'/',
         userData: { limit: resultsLimit },
     }]);
 
@@ -47,7 +47,7 @@ async function main() {
 
             Apify.utils.log.info(`request.userData: ${JSON.stringify(request.userData)}`);
             if (typeof request.userData.limit !== 'undefined') {
-                Apify.utils.log.info(`Hading graphql response`);
+                Apify.utils.log.info(`Handling graphql response`);
                 return handlePostsGraphQLResponse(page, response)
                     .catch( error => Apify.utils.log.error(error))
             }
