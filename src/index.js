@@ -67,10 +67,10 @@ async function main() {
         Apify.utils.log.info(`request.userData: ${JSON.stringify(request.userData)}`);
         if (typeof request.userData.limit !== 'undefined') {
             Apify.utils.log.info('Fetching posts');
-            scrapePosts(page, request, itemSpec, entryData, requestQueue);
+            return scrapePosts(page, request, itemSpec, entryData, requestQueue);
         } else {
             Apify.utils.log.info(`Fetching post`);
-            scrapeDetails(request, itemSpec, entryData)
+            return scrapeDetails(request, itemSpec, entryData)
         }
     }
 
