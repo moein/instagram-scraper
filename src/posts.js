@@ -140,7 +140,7 @@ const finiteScroll = async (pageData, page, request, length = 0) => {
  * @param {Object} itemSpec Parsed page data
  * @param {Object} entryData data from window._shared_data.entry_data
  */
-const scrapePosts = async (page, request, itemSpec, entryData) => {
+const scrapePosts = async (page, request, itemSpec, entryData, requestQueue) => {
     const timeline = getPostsFromEntryData(itemSpec.pageType, entryData);
     initData[itemSpec.id] = timeline;
 
@@ -154,14 +154,14 @@ const scrapePosts = async (page, request, itemSpec, entryData) => {
 
     await page.waitFor(500);
 
+    log(itemSpec, 'Condition for finiteScroll: '+JSON.stringify({hasNext: initData[itemSpec.id].hasNextPage, limit: request.userData.limit}))
     if (initData[itemSpec.id].hasNextPage && posts[itemSpec.id].length < request.userData.limit) {
         await page.waitFor(1000);
         await finiteScroll(itemSpec, page, request, posts);
     }
 
-    const queue = await Apify.openRequestQueue();
     for (const item of posts[itemSpec.id]) {
-        await queue.addRequest({url: 'https://www.instagram.com/p/' + item.node.shortcode});
+        await requestQueue.addRequest({url: 'https://www.instagram.com/p/' + item.node.shortcode});
     }
 
     log(itemSpec, `${posts[itemSpec.id].length} posts queued`);

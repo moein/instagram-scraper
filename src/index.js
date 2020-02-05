@@ -22,6 +22,8 @@ async function main() {
         process.exit(1);
     }
 
+    const requestQueue = await Apify.openRequestQueue('posts');
+
     const requestList = await Apify.openRequestList('request-list', [{
         url: 'https://www.instagram.com/'+instagramUsername,
         userData: { limit: resultsLimit },
@@ -65,7 +67,7 @@ async function main() {
         Apify.utils.log.info(`request.userData: ${JSON.stringify(request.userData)}`);
         if (typeof request.userData.limit !== 'undefined') {
             Apify.utils.log.info('Fetching posts');
-            scrapePosts(page, request, itemSpec, entryData);
+            scrapePosts(page, request, itemSpec, entryData, requestQueue);
         } else {
             Apify.utils.log.info(`Fetching post`);
             scrapeDetails(request, itemSpec, entryData)
@@ -76,6 +78,7 @@ async function main() {
 
     const crawler = new Apify.PuppeteerCrawler({
         requestList,
+        requestQueue,
         gotoFunction,
         puppeteerPoolOptions: {
             maxOpenPagesPerInstance: 1
