@@ -26,7 +26,7 @@ const getPostsFromGraphQL = (pageType, data) => {
     }
     const posts = timeline ? timeline.edges : [];
     const hasNextPage = timeline ? timeline.page_info.has_next_page : false;
-    return { posts, hasNextPage };
+    return { posts: posts.map(p => p.node.shortcode), hasNextPage };
 }
 
 /**
@@ -158,11 +158,11 @@ const scrapePosts = async (page, request, itemSpec, entryData, requestQueue) => 
     log(itemSpec, 'Condition for finiteScroll: '+JSON.stringify({hasNext: initData[itemSpec.id].hasNextPage, limit: request.userData.limit}))
     if (initData[itemSpec.id].hasNextPage && posts[itemSpec.id].length < request.userData.limit) {
         await page.waitFor(1000);
-        await finiteScroll(itemSpec, page, request, posts);
+        await finiteScroll(itemSpec, page, request, posts.length);
     }
 
     for (const item of posts[itemSpec.id]) {
-        await requestQueue.addRequest({url: 'https://www.instagram.com/p/' + item.node.shortcode+'/'});
+        await requestQueue.addRequest({url: 'https://www.instagram.com/p/' + item+'/'});
     }
 
     log(itemSpec, `${posts[itemSpec.id].length} posts queued`);
