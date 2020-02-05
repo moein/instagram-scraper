@@ -159,27 +159,12 @@ const scrapePosts = async (page, request, itemSpec, entryData) => {
         await finiteScroll(itemSpec, page, request, posts);
     }
 
-    const output = posts[itemSpec.id].map((item, index) => ({
-        '#debug': {
-            ...Apify.utils.createRequestDebugInfo(request),
-            index,
-            ...itemSpec,
-            shortcode: item.node.shortcode,
-            postLocationId: item.node.location && item.node.location.id || null,
-            postOwnerId: item.node.owner && item.node.owner.id || null,
-        },
-        alt: item.node.accessibility_caption,
-        url: 'https://www.instagram.com/p/' + item.node.shortcode,
-        likesCount: item.node.edge_media_preview_like.count,
-        imageUrl: item.node.display_url,
-        firstComment: item.node.edge_media_to_caption.edges[0] && item.node.edge_media_to_caption.edges[0].node.text,
-        timestamp: new Date(parseInt(item.node.taken_at_timestamp) * 1000),
-        locationName: item.node.location && item.node.location.name || null,
-        ownerUsername: item.node.owner && item.node.owner.username || null,
-    })).slice(0, request.userData.limit);
+    const queue = await Apify.openRequestQueue();
+    for (const item of posts[itemSpec.id]) {
+        await queue.addRequest({url: 'https://www.instagram.com/p/' + item.node.shortcode});
+    }
 
-    await Apify.pushData(output);
-    log(itemSpec, `${output.length} items saved, task finished`);
+    log(itemSpec, `${posts[itemSpec.id].length} posts queued`);
 }
 
 /**
