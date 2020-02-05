@@ -2,32 +2,16 @@ const Apify = require('apify');
 const { scrapePosts, handlePostsGraphQLResponse } = require('./posts');
 const { scrapeComments, handleCommentsGraphQLResponse }  = require('./comments');
 const { scrapeDetails }  = require('./details');
-const { searchUrls } = require('./search');
 const { getItemSpec } = require('./helpers');
 const { GRAPHQL_ENDPOINT, ABORTED_RESOUCE_TYPES, SCRAPE_TYPES } = require('./consts');
 const errors = require('./errors');
 
 async function main() {
     const input = await Apify.getInput();
-    const { proxy, resultsType, resultsLimit = 200 } = input;
-
-    const foundUrls = await searchUrls(input);
-    const urls = [
-        ...(input.directUrls || []), 
-        ...foundUrls,
-    ];
-
-    if (urls.length === 0) {
-        Apify.utils.log.info('No URLs to process');
-        process.exit(0);
-    }
-
-    await searchUrls(input);
+    const { proxy, instagramUsername, resultsLimit = 200 } = input;
 
     try {
         if (!proxy) throw errors.proxyIsRequired();
-        if (!resultsType) throw errors.typeIsRequired();
-        if (!Object.values(SCRAPE_TYPES).includes(resultsType)) throw errors.unsupportedType(resultsType);
     } catch (error) {
         console.log('--  --  --  --  --');
         console.log(' ');
@@ -38,12 +22,10 @@ async function main() {
         process.exit(1);
     }
 
-    const requestListSources = urls.map((url) => ({
-        url,
+    const requestList = await Apify.openRequestList('request-list', [{
+        url: 'https://www.instagram.com/'+instagramUsername,
         userData: { limit: resultsLimit },
-    }));
-
-    const requestList = await Apify.openRequestList('request-list', requestListSources);
+    }]);
 
     const gotoFunction = async ({request, page}) => {
         await page.setRequestInterception(true);
@@ -61,11 +43,11 @@ async function main() {
             // Wait for the page to parse it's data
             while (!page.itemSpec) await page.waitFor(100);
 
-            switch (resultsType) {
-                case SCRAPE_TYPES.POSTS: return handlePostsGraphQLResponse(page, response)
-                    .catch( error => Apify.utils.log.error(error));
-                case SCRAPE_TYPES.COMMENTS: return handleCommentsGraphQLResponse(page, response)
-                    .catch( error => Apify.utils.log.error(error));
+            Apify.utils.log.info(`request.userData: ${JSON.stringify(request.userData)}`);
+            if (typeof request.userData.limit !== 'undefined') {
+                Apify.utils.log.info(`Hading graphql response`);
+                return handlePostsGraphQLResponse(page, response)
+                    .catch( error => Apify.utils.log.error(error))
             }
         });
 
@@ -80,11 +62,14 @@ async function main() {
         const itemSpec = getItemSpec(entryData);
         page.itemSpec = itemSpec;
 
-        switch (resultsType) {
-            case SCRAPE_TYPES.POSTS: return scrapePosts(page, request, itemSpec, entryData);
-            case SCRAPE_TYPES.COMMENTS: return scrapeComments(page, request, itemSpec, entryData);
-            case SCRAPE_TYPES.DETAILS: return scrapeDetails(request, itemSpec, entryData);
-        };
+        Apify.utils.log.info(`request.userData: ${JSON.stringify(request.userData)}`);
+        if (typeof request.userData.limit === 'undefined') {
+            Apify.utils.log.info('Fetching posts');
+            scrapePosts(page, request, itemSpec, entryData);
+        } else {
+            Apify.utils.log.info(`Fetching post`);
+            scrapeDetails(request, itemSpec, entryData)
+        }
     }
 
     if (proxy.apifyProxyGroups && proxy.apifyProxyGroups.length === 0) delete proxy.apifyProxyGroups;
