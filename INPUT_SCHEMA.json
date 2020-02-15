@@ -13,7 +13,7 @@
         },
         "resultsLimit": {
             "title": "Post limit",
-            "type": "number",
+            "type": "string",
             "description": "Number of posts to fetch",
             "editor": "textfield",
             "prefill": "200"
