@@ -34,6 +34,7 @@ const formatSinglePost = (node) => {
     const likes = node.edge_liked_by || node.edge_media_preview_like;
     return {
         type: node.__typename ? node.__typename.replace('Graph', '') : (node.is_video ? 'Video' : 'Image'),
+        id: node.id,
         shortCode: node.shortcode,
         caption: node.edge_media_to_caption.edges.length ? node.edge_media_to_caption.edges[0].node.text : '',
         commentsCount: comments ? comments.count : null,
@@ -46,6 +47,7 @@ const formatSinglePost = (node) => {
         timestamp: node.taken_at_timestamp ? new Date(parseInt(node.taken_at_timestamp) * 1000) : null,
         locationName: node.location ? node.location.name : null,
         ownerFullName: node.owner ? node.owner.full_name : null,
+        mediaList: node.edge_sidecar_to_children ? node.edge_sidecar_to_children.edges : []
     };
 }
 
