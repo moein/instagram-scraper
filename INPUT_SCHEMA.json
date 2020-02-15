@@ -11,6 +11,13 @@
             "editor": "textfield",
             "prefill": "foodiman_"
         },
+        "resultsLimit": {
+            "title": "Post limit",
+            "type": "number",
+            "description": "Number of posts to fetch",
+            "editor": "textfield",
+            "prefill": "200"
+        },
         "proxy": {
             "title": "Proxy configuration",
             "type": "object",
